@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 
 class LLMRequest(BaseModel):
-    prompt: str
+    model: str
+    messages: list[dict[str, str]]
     max_tokens: int = 100
-    n: int = 1
+    
 
 class LLMResponse(BaseModel):
     message: str
