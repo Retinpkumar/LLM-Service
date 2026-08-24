@@ -11,6 +11,8 @@ def test_llm_request():
     
 
 def test_llm_response():
-    response = LLMResponse(message="Hello, world!", token_count=10)
+    response = LLMResponse(message="Hello, world!", input_tokens=5, output_tokens=5, estimated_cost_usd=0.01)
     assert response.message == "Hello, world!"
-    assert response.token_count == 10
+    assert response.input_tokens == 5
+    assert response.output_tokens == 5
+    assert response.estimated_cost_usd == 0.01

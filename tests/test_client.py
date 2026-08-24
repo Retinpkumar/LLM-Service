@@ -8,13 +8,17 @@ async def test_call_llm_success(monkeypatch):
     # Mock the response from the client
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text="Hello world!")]
-    mock_response.usage.total_tokens = 5
+    mock_response.usage.input_tokens = 5
+    mock_response.usage.output_tokens = 5
+    mock_response.usage.estimated_cost_usd = 0.01
+
     # Mock the AsyncAnthropic client
     mock_client = MagicMock()
     mock_client.messages.create = AsyncMock(return_value=mock_response)
     
     # Patch the client in the module
     monkeypatch.setattr("llm_service.client.get_client", MagicMock(return_value=mock_client))
+    monkeypatch.setattr("llm_service.client.estimate_cost_usd", MagicMock(return_value=0.01))
 
     # Create a sample request
     request = MagicMock()
@@ -27,20 +31,26 @@ async def test_call_llm_success(monkeypatch):
 
     # Assertions
     assert response.message == "Hello world!"
-    assert response.token_count == 5
+    assert response.input_tokens == 5
+    assert response.output_tokens == 5
+    assert response.estimated_cost_usd == 0.01
 
 @pytest.mark.asyncio
 async def test_call_llm_batch_success(monkeypatch):
     # Mock the response from the client
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text="Hello world!")]
-    mock_response.usage.total_tokens = 5
+    mock_response.usage.input_tokens = 5
+    mock_response.usage.output_tokens = 5
+    mock_response.usage.estimated_cost_usd = 0.01
+
     # Mock the AsyncAnthropic client
     mock_client = MagicMock()
     mock_client.messages.create = AsyncMock(return_value=mock_response)
     
     # Patch the client in the module
     monkeypatch.setattr("llm_service.client.get_client", MagicMock(return_value=mock_client))
+    monkeypatch.setattr("llm_service.client.estimate_cost_usd", MagicMock(return_value=0.01))
 
     # Create sample requests
     request1 = MagicMock()
@@ -62,4 +72,6 @@ async def test_call_llm_batch_success(monkeypatch):
     assert len(responses) == 2
     for response in responses:
         assert response.message == "Hello world!"
-        assert response.token_count == 5
+        assert response.input_tokens == 5
+        assert response.output_tokens == 5
+        assert response.estimated_cost_usd == 0.01

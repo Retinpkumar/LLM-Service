@@ -8,7 +8,9 @@ class LLMRequest(BaseModel):
 
 class LLMResponse(BaseModel):
     message: str
-    token_count: int
+    input_tokens: int
+    output_tokens: int
+    estimated_cost_usd: float
 
 
 
