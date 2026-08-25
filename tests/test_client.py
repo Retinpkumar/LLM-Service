@@ -4,6 +4,68 @@ from llm_service.client import call_llm, call_llm_batch
 
 
 @pytest.mark.asyncio
+async def test_call_llm_passes_system_prompt(monkeypatch):
+    # Mock the response from the client
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Hello world!")]
+    mock_response.usage.input_tokens = 10
+    mock_response.usage.output_tokens = 5
+
+    # Mock the AsyncAnthropic client
+    mock_client = MagicMock()
+    mock_client.messages.create = AsyncMock(return_value=mock_response)
+
+    # Patch the client in the module
+    monkeypatch.setattr("llm_service.client.get_client", MagicMock(return_value=mock_client))
+    monkeypatch.setattr("llm_service.client.estimate_cost_usd", MagicMock(return_value=0.01))
+
+    # Create a sample request with a system prompt
+    request = MagicMock()
+    request.model = "test-model"
+    request.messages = [{"role": "user", "content": "Hello"}]
+    request.max_tokens = 10
+    request.system = "You are a helpful assistant."
+
+    # Call the function
+    response = await call_llm(request)
+
+    # Assertions
+    call_kwargs = mock_client.messages.create.call_args.kwargs 
+    assert call_kwargs["system"] == "You are a helpful assistant."
+
+@pytest.mark.asyncio
+async def test_call_llm_omits_system_when_none(monkeypatch):
+    # Mock the response from the client
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Hello world!")]
+    mock_response.usage.input_tokens = 10
+    mock_response.usage.output_tokens = 5
+
+    # Mock the AsyncAnthropic client
+    mock_client = MagicMock()
+    mock_client.messages.create = AsyncMock(return_value=mock_response)
+
+    # Patch the client in the module
+    monkeypatch.setattr("llm_service.client.get_client", MagicMock(return_value=mock_client))
+    monkeypatch.setattr("llm_service.client.estimate_cost_usd", MagicMock(return_value=0.01))
+
+    # Create a sample request without a system prompt
+    request = MagicMock()
+    request.model = "test-model"
+    request.messages = [{"role": "user", "content": "Hello"}]
+    request.max_tokens = 10
+    request.system = None
+
+    # Call the function
+    response = await call_llm(request)
+
+    # Assertions
+    call_kwargs = mock_client.messages.create.call_args.kwargs 
+    assert "system" not in call_kwargs
+
+
+
+@pytest.mark.asyncio
 async def test_call_llm_success(monkeypatch):
     # Mock the response from the client
     mock_response = MagicMock()
