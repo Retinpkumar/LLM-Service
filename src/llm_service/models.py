@@ -4,6 +4,7 @@ class LLMRequest(BaseModel):
     model: str
     messages: list[dict[str, str]]
     max_tokens: int = 100
+    system: str | None = None
     
 
 class LLMResponse(BaseModel):
