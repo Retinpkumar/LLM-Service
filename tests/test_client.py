@@ -1,6 +1,93 @@
 import pytest
+import httpx
+from anthropic import RateLimitError
 from unittest.mock import AsyncMock, MagicMock
 from llm_service.client import call_llm, call_llm_batch
+
+
+
+@pytest.mark.asyncio
+async def test_call_llm_retries_on_rate_limit(monkeypatch):
+    # Build a mock successful response
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Hello world!")]
+    mock_response.usage.input_tokens = 10
+    mock_response.usage.output_tokens = 5
+
+    # Build tow fake RateLimitError instances to simulate two failed attempts
+    rate_limit_error1 = RateLimitError(
+        message="rate limited",
+        response=httpx.Response(status_code=429, request=httpx.Request("POST", "https://api.anthropic.com")),
+        body=None,
+    )
+    rate_limit_error2 = RateLimitError(
+        message="rate limited",
+        response=httpx.Response(status_code=429, request=httpx.Request("POST", "https://api.anthropic.com")),
+        body=None,
+    )
+
+    # Mock the AsyncAnthropic client
+    mock_client = MagicMock()
+
+    # Scripted sequence: fail, fail, then succeed
+    mock_client.messages.create = AsyncMock(side_effect=[rate_limit_error1, rate_limit_error2, mock_response])
+
+    # Patch the client in the module
+    monkeypatch.setattr("llm_service.client.get_client", MagicMock(return_value=mock_client))
+    monkeypatch.setattr("llm_service.client.estimate_cost_usd", MagicMock(return_value=0.01))
+    monkeypatch.setattr("llm_service.client.asyncio.sleep", AsyncMock())  # Mock sleep to avoid actual delay
+
+    # Create a sample request
+    request = MagicMock()
+    request.model = "test-model"
+    request.messages = [{"role": "user", "content": "Hello"}]
+    request.max_tokens = 10
+    request.system = None
+
+    # Call the function
+    response = await call_llm(request)
+
+    # Assertions
+    assert response.message == "Hello world!"
+    assert mock_client.messages.create.call_count == 3  # Ensure it retried twice before succeeding
+
+
+@pytest.mark.asyncio
+async def test_call_llm_raises_after_max_retries(monkeypatch):
+    rate_limit_error1 = RateLimitError(
+        message="rate limited",
+        response=httpx.Response(status_code=429, request=httpx.Request("POST", "https://api.anthropic.com")),
+        body=None,
+    )
+    rate_limit_error2 = RateLimitError(
+        message="rate limited",
+        response=httpx.Response(status_code=429, request=httpx.Request("POST", "https://api.anthropic.com")),
+        body=None,
+    )
+    rate_limit_error3 = RateLimitError(
+        message="rate limited",
+        response=httpx.Response(status_code=429, request=httpx.Request("POST", "https://api.anthropic.com")),
+        body=None,
+    )
+
+    mock_client = MagicMock()
+    mock_client.messages.create = AsyncMock(
+        side_effect=[rate_limit_error1, rate_limit_error2, rate_limit_error3]
+    )
+
+    monkeypatch.setattr("llm_service.client.get_client", MagicMock(return_value=mock_client))
+    monkeypatch.setattr("llm_service.client.asyncio.sleep", AsyncMock())
+
+    request = MagicMock()
+    request.model = "test-model"
+    request.messages = [{"role": "user", "content": "Hello"}]
+    request.max_tokens = 10
+    request.system = None
+
+    with pytest.raises(RateLimitError):
+        await call_llm(request)
+
+    assert mock_client.messages.create.call_count == 3
 
 
 @pytest.mark.asyncio
@@ -62,7 +149,6 @@ async def test_call_llm_omits_system_when_none(monkeypatch):
     # Assertions
     call_kwargs = mock_client.messages.create.call_args.kwargs 
     assert "system" not in call_kwargs
-
 
 
 @pytest.mark.asyncio
