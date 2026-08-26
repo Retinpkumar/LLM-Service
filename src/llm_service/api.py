@@ -9,6 +9,7 @@ app = FastAPI()
 
 class GenerateRequest(BaseModel):
     prompt: str
+    system: str | None = None
 
 
 @app.get("/health")
@@ -21,5 +22,6 @@ async def generate(request: GenerateRequest) -> LLMResponse:
     llm_request = LLMRequest(
         model="claude-sonnet-4-6",
         messages=[{"role": "user", "content": request.prompt}],
+        system=request.system,
     )
     return await call_llm(llm_request)
