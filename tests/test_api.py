@@ -22,3 +22,21 @@ def test_generate_endpoint():
 
     assert response.status_code == 200
     assert response.json()["message"] == "Hello there, friend!"
+
+def test_generate_endpoint_with_system_prompt():
+    fake_response = LLMResponse(
+        message="Bonjour!",
+        input_tokens=20,
+        output_tokens=5,
+        estimated_cost_usd=0.0002,
+    )
+
+    with patch("llm_service.api.call_llm", new=AsyncMock(return_value=fake_response)) as mock_call:
+        response = client.post(
+            "/generate",
+            json={"prompt": "Say hello", "system": "Respond in French"},
+        )
+
+    assert response.status_code == 200
+    sent_request = mock_call.call_args.args[0]
+    assert sent_request.system == "Respond in French"
