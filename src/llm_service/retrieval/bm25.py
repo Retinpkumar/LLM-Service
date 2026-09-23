@@ -1,7 +1,9 @@
 import re
-
+import dotenv
 import numpy as np
 from rank_bm25 import BM25Okapi
+
+dotenv.load_dotenv()
 
 
 def simple_tokenize(doctext):
@@ -20,6 +22,8 @@ class BM25Query:
         top_indices = np.argsort(scores)[::-1][:top_n]
         results = []
         for idx in top_indices:
+            if scores[idx] <= 0:
+                continue
             results.append(
                 {
                     "score": scores[idx],

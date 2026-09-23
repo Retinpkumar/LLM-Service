@@ -1,5 +1,6 @@
 from llm_service.chunking import chunk_document
 from llm_service.retrieval.bm25 import BM25Query
+from llm_service.retrieval.fusion import reciprocal_rank_fusion
 from llm_service.retrieval.vector_store import QdrantDocumentStore
 
 with open("data/coke_10k_excerpt.txt", "r") as f:
@@ -28,10 +29,10 @@ headers = [
 docs = chunk_document(text, headers, source_file="coke_10k_excerpt.txt", overlap=150)
 
 bm25_index = BM25Query(docs)
-results = bm25_index.query("patents")
+bm25_results = bm25_index.query("patents")
 
 print("=== BM25 ===")
-for r in results:
+for r in bm25_results:
     print(f"Score: {r['score']:.4f}")
     print(f"Chunk Index: {r['chunk_index']}")
     print(f"Chunk: {r['chunk'][:150]}...")
@@ -50,3 +51,8 @@ for r in vector_results:
     print(f"Chunk Index: {r['chunk_index']}")
     print(f"Chunk: {r['chunk'][:150]}...")
     print()
+
+print("=== RRF ===")
+fused = reciprocal_rank_fusion(bm25_results, vector_results)
+for idx, score in fused:
+    print(f"Chunk Index: {idx} | RRF Score: {score:.4f}")
