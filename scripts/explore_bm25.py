@@ -31,5 +31,6 @@ results = bm25_index.query("patents")
 
 for r in results:
     print(f"Score: {r['score']:.4f}")
+    print(f"Chunk Index: {r['chunk_index']}")
     print(f"Chunk: {r['chunk'][:150]}...")
     print()

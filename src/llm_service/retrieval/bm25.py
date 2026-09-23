@@ -20,5 +20,11 @@ class BM25Query:
         top_indices = np.argsort(scores)[::-1][:top_n]
         results = []
         for idx in top_indices:
-            results.append({"score": scores[idx], "chunk": self.docs[idx].page_content})
+            results.append(
+                {
+                    "score": scores[idx],
+                    "chunk_index": self.docs[idx].metadata["chunk_index"],
+                    "chunk": self.docs[idx].page_content,
+                }
+            )
         return results
