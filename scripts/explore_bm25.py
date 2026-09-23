@@ -1,6 +1,6 @@
 from llm_service.chunking import chunk_document
 from llm_service.retrieval.bm25 import BM25Query
-from llm_service.retrieval.fusion import reciprocal_rank_fusion
+from llm_service.retrieval.fusion import hybrid_search
 from llm_service.retrieval.vector_store import QdrantDocumentStore
 
 with open("data/coke_10k_excerpt.txt", "r") as f:
@@ -53,6 +53,6 @@ for r in vector_results:
     print()
 
 print("=== RRF ===")
-fused = reciprocal_rank_fusion(bm25_results, vector_results)
+fused = hybrid_search("patents", bm25_index, store, "coke_10k")
 for idx, score in fused:
     print(f"Chunk Index: {idx} | RRF Score: {score:.4f}")
