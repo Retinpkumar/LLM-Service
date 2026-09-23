@@ -1,5 +1,6 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+
 # Everythin in a single function named chunk_document(text, headers)
 def chunk_document(text, headers, source_file, overlap=0):
     splitter = RecursiveCharacterTextSplitter(
@@ -29,7 +30,7 @@ def chunk_document(text, headers, source_file, overlap=0):
     for i, doc in enumerate(docs):
         section = get_section_for_chunk(doc.metadata["start_index"], header_positions)
         doc.metadata["section"] = section
-        doc.metadata["source"] =  source_file
+        doc.metadata["source"] = source_file
         doc.metadata["chunk_index"] = i
 
     return docs
