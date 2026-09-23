@@ -1,5 +1,6 @@
 from llm_service.chunking import chunk_document
 from llm_service.retrieval.bm25 import BM25Query
+from llm_service.retrieval.vector_store import QdrantDocumentStore
 
 with open("data/coke_10k_excerpt.txt", "r") as f:
     text = f.read()
@@ -29,7 +30,22 @@ docs = chunk_document(text, headers, source_file="coke_10k_excerpt.txt", overlap
 bm25_index = BM25Query(docs)
 results = bm25_index.query("patents")
 
+print("=== BM25 ===")
 for r in results:
+    print(f"Score: {r['score']:.4f}")
+    print(f"Chunk Index: {r['chunk_index']}")
+    print(f"Chunk: {r['chunk'][:150]}...")
+    print()
+
+
+store = QdrantDocumentStore()
+store.create_collection("coke_10k")
+store.store_documents("coke_10k", docs)
+
+vector_results = store.query_documents("coke_10k", "patents")
+
+print("=== VECTOR ===")
+for r in vector_results:
     print(f"Score: {r['score']:.4f}")
     print(f"Chunk Index: {r['chunk_index']}")
     print(f"Chunk: {r['chunk'][:150]}...")
